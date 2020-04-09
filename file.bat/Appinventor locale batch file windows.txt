@@ -32,14 +32,14 @@ start_Appinventor.bat in my case put
 
 @echo off
 echo "Starting AppInventor..."
-"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\"java_dev_appserver.cmd --port=8888 --address=0.0.0.0 C:/Users/Amos/Documents/APPin/appinventor-sources/appinventor/appengine/build/war
+"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\"java_dev_appserver.cmd --port=8888 --address=0.0.0.0 C:/Appinventor/appinventor-sources/appinventor/appengine/build/war
   
 into:  
 start_Buildserver.bat   in my case put
 
 @echo off
 echo "Starting BuildServer..."
-cd C:/Users/Amos/Documents/APPin/appinventor-sources/appinventor/buildserver
+cd C:/Appinventor/appinventor-sources/appinventor/buildserver
 C:\ant\bin\ant.bat RunLocalBuildServer
 
 
@@ -47,9 +47,9 @@ C:\ant\bin\ant.bat RunLocalBuildServer
 create file desktop Appinventor.bat
 @echo off
 echo "Starting AppInventor..."
-cd "C:/Users/Amos/Documents/APPin/appinventor-sources/appinventor/"
+cd "C:/Appinventor/appinventor-sources/appinventor/"
 start start_Appinventor.bat
-cd "C:/Users/Amos/Documents/APPin/appinventor-sources/appinventor/"
+cd "C:/Appinventor/appinventor-sources/appinventor/"
 start start_Buildserver.bat
 
 
