@@ -3,11 +3,12 @@ sorry for the english
 Come eseguire appinventor in locale con file .bat diretamente dal desktop in windows
 How to run appinventor locally with .bat files directly from the desktop in windows
 
+###############################################################################################
+from the application site have README.md 
 dal sito del applicazion README.md
-from the application site have README.md   
+  
 https://github.com/mit-cml/appinventor-sources.git
 
-###############################################################################################
 #### Running the main server
 
     $ your-google-cloud-SDK-folder/bin/java_dev_appserver.sh
