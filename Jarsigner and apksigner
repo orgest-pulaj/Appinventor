@@ -1,0 +1,152 @@
+Introduction to the tool
+
+    Jarsigner is a general tool provided by JDK for signing jar packages.
+     Located at JDK/bin/jarsigner.exe
+     
+     Apksigner is a special tool provided by Google for Android apk signature and verification.
+     Located in Android SDK/build-tools/SDK version/apksigner.bat
+     
+     Both the apk package and the jar package are essentially zip-formatted archives, so their signature process is similar (V1 signature only).
+     Both of the above tools can sign the Android apk package.
+
+1. The difference between V1 and V2 signatures
+
+    In the Android Studio, click on the menu Build->Generate signed apk...
+     You can see two signature options V1 (Jar Signature) V2 (Full APK Signature),
+     Just started to upgrade AS to see this embarrassing, since it is APK Signature, you can safely choose V2, the installation failed? ? ? Helpless, can only check the information...
+     
+     Starting with Android 7.0, Google added a new signature scheme V2 Scheme (APK Signature);
+     However, Android 7.0 and below can only use the old signature scheme V1 scheme (JAR signing)
+     
+     V1 signature:
+             From the JDK (jarsigner), each file of the zip archive is verified, and the package can be modified after the signature (moving/recompressing the file)
+             Decompress the apk/jar of the V1 signature, and store the signature file (MANIFEST.MF, CERT.SF, CERT.RSA) in META-INF. 
+             The MANIFEST.MF file saves the SHA1 fingerprint of all files (except the META-INF file), so that the V1 signature is a signature verification of a single file in the compressed package.
+        
+     V2 signature:
+             From Google (apksigner), the entire file is verified by the zip archive, and the zip file (including zipalign) cannot be modified after signing.
+             The apk decompression of the V2 signature does not find the signature file. After recompression, the V2 signature is invalid. It can be seen that the V2 signature is the signature verification of the entire APK.
+        
+             The advantages of V2 signature are obvious:
+                     Signature is more secure (cannot modify the zip)
+                     Signature verification time is shorter (no decompression verification is required), so installation speed is faster
+     
+     Note: The apksigner tool uses both V1 and V2 signatures by default to be compatible with Android 7.0 and below.
+
+2.zipalign and V2 signature
+
+    Located in Android SDK/build-tools/SDK version/zipalign.exe
+     Zipalign is a tool for aligning zip packages, which aligns the uncompressed data in the APK package in order, thus reducing the memory consumption of the APP runtime.
+     Zipalign -v 4 in.apk out.apk //4 byte alignment optimization
+     Zipalign -c -v 4 in.apk //check if the APK is aligned
+     
+     Zipalign can be executed after V1 signature
+     But zipalign can't be executed after V2 signature, it can only be executed before V2 signature! ! !
+
+Second, the signature step
+1. Generate a key pair (existing keystore, can be ignored)
+
+    When Eclipse or Android Studio is Debugging, a default keystore is used to sign the App:
+             The default is C:\Users\username\.android\debug.keystore
+             Keystore name: debug.keystore
+             Key alias: androiddebugkey
+             Keystore password: android
+        
+     1. Generate a key pair
+             Enter JDK/bin, enter the command 
+             Keytool -genkeypair -keystore keystore name -alias key alias -validity days -keyalg RSA
+        
+             Parameters:
+                     -genkeypair generates a key pair (consisting of private and public keys)
+            -keystore keystore name and storage location (default current directory)
+                     -alias The alias of the key pair (the keystore can have multiple key pairs to distinguish different key pairs)
+                     -validity The validity period of the key pair (unit: day)
+                     -keyalg Algorithm for generating a key pair (usually RSA/DSA, DSA is only used for signature, DSA is used by default)
+                     -delete delete a key
+            
+             Tip: You can use this command repeatedly to create multiple key pairs in the same keystore.
+        
+             E.g:           
+                     Add a pair of keys in the debug.keystore, the alias is release
+            keytool -genkeypair -keystore debug.keystore -alias release -validity 30000
+                
+     2. View the keystore
+             Enter JDK/bin, enter the command
+             Keytool -list -v -keystore keystore name
+        
+             Parameters:
+                     -list view key list
+                     -v view key details
+            
+             E.g: 
+            keytool -list -v -keystore debug.keystore
+                     There are now two pairs of keys in the debug.keystore keystore, the alias is androiddebugkey release
+
+2. Signature
+
+    1. Method 1 (jarsigner, only supports V1 signature)
+             Enter JDK/bin, enter the command
+             Jarsigner -keystore keystore name xxx.apk key alias
+        
+             Starting with JDK7, the default algorithm for jarsigner is SHA256, but it is not supported under Android 4.2.
+             So you need to modify the algorithm, add the parameter -digestalg SHA1 -sigalg SHA1withRSA
+             Jarsigner -keystore keystore name -digestalg SHA1 -sigalg SHA1withRSA xxx.apk key alias
+        
+             Parameters:
+                     -digestalg summary algorithm
+                     -sigalg signature algorithm
+        
+             E.g: 
+                     Signed with JDK7 and above jarsigner, does not support Android 4.2 below
+            jarsigner -keystore debug.keystore MyApp.apk androiddebugkey
+            
+                     Signed with JDK7 and above jarsigner, compatible with Android 4.2 and below            
+            jarsigner -keystore debug.keystore -digestalg SHA1 -sigalg SHA1withRSA MyApp.apk androiddebugkey
+                    
+     2. Method 2 (apksigner, using V1 and V2 signatures by default)
+             Enter the Android SDK/build-tools/SDK version, enter the command
+             Apksigner sign --ks keystore name --ks-key-alias key alias xxx.apk
+        
+             If there are multiple key pairs in the keystore, you must specify a key alias
+             Apksigner sign --ks keystore name --ks-key-alias key alias xxx.apk
+        
+             Disable V2 signature
+             Apksigner sign --v2-signing-enabled false --ks keystore name xxx.apk
+                        
+             Parameters:
+                     --ks-key-alias key alias, if the keystore has a key pair, it can be omitted, otherwise it must be selected
+                     --v1-signing-enabled Whether to enable V1 signature, it is enabled by default.
+                     --v2-signing-enabled Whether to enable V2 signature, it is enabled by default.
+        
+             E.g: 
+                     There is only one key pair in the debug.keystore keystore
+            apksigner sign --ks debug.keystore MyApp.apk
+            
+                     There are multiple key pairs in the debug.keystore keystore, so you must specify a key alias.
+            apksigner sign --ks debug.keystore --ks-key-alias androiddebugkey MyApp.apk
+
+3. Signature verification
+
+    1. Method 1 (keytool, only supports V1 signature verification)
+             Enter JDK/bin, enter the command
+             Keytool -printcert -jarfile MyApp.apk (display signature certificate information)
+        
+             Parameters:
+                     -printcert Print certificate content
+                     -jarfile <filename> signed jar file or apk file   
+        
+     2. Method 2 (apksigner, support V1 and V2 signature verification)
+             Enter the Android SDK/build-tools/SDK version, enter the command
+        apksigner verify -v --print-certs xxx.apk
+        
+             Parameters:
+                     -v, --verbose Show details (show whether to use V1 and V2 signatures)
+                     --print-certs Display signature certificate information
+        
+             E.g: 
+            apksigner verify -v MyApp.apk
+        
+            Verifies
+            Verified using v1 scheme (JAR signing): true
+            Verified using v2 scheme (APK Signature Scheme v2): true
+            Number of signers: 1
